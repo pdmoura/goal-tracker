@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spiritual Consistency Tracker</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        :root {
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --primary: #2563eb;
+            --success: #059669;
+            --danger: #ef4444;
+            --border: #cbd5e1;
+            --accent: #f1f5f9;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+            margin: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            color: var(--primary);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        /* Instruction Box */
+        .instructions {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            color: #1e40af;
+            display: flex;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding: 1.25rem;
+            background: var(--accent);
+            border-radius: 12px;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .day-btn {
+            aspect-ratio: 1;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 1rem;
+            position: relative;
+        }
+
+        .day-btn.completed {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+            transform: scale(0.95);
+        }
+
+        .day-btn.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .day-btn:hover:not(.completed) {
+            border-color: var(--primary);
+            background: var(--accent);
+        }
+
+        .notes-container {
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+            display: none;
+        }
+
+        .notes-container.visible {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+
+        textarea {
+            width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            box-sizing: border-box;
+            background: var(--accent);
+            transition: border-color 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: white;
+        }
+
+        /* Toolbar for Buttons */
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            padding-top: 1.5rem;
+        }
+
+        .btn-action {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid var(--border);
+            background: white;
+            color: var(--text);
+        }
+
+        .btn-action:hover {
+            background: var(--accent);
+        }
+
+        .btn-danger {
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 480px) {
+            .grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1><i data-lucide="shield-check"></i> Personal Mission</h1>
+        <p class="subtitle">15 Minutes of Study Before Work<br>21-Day Consistency Goal</p>
+    </header>
+
+    <div class="instructions">
+        <i data-lucide="info" size="18"></i>
+        <span><strong>Quick Guide:</strong> Double-click a day to mark it complete. Single-click to view or edit your notes.</span>
+    </div>
+
+    <div class="stats">
+        <span>Progress: <span id="count">0</span> / 21</span>
+        <span id="percent" style="color: var(--primary)">0%</span>
+    </div>
+
+    <div class="grid" id="habitGrid"></div>
+
+    <div class="notes-container" id="notesBox">
+        <label id="noteLabel">Day 1 Reflection</label>
+        <textarea id="dailyNote" placeholder="Write any impressions or insights here..."></textarea>
+    </div>
+
+    <div class="toolbar">
+        <button class="btn-action" onclick="exportNotes()">
+            <i data-lucide="download" size="16"></i> Export Notes
+        </button>
+        <button class="btn-action btn-danger" onclick="resetProgress()">
+            <i data-lucide="rotate-ccw" size="16"></i> Reset
+        </button>
+    </div>
+</div>
+
+<script>
+    const totalDays = 21;
+    const storageKey = 'pedro_spiritual_tracker';
+    const grid = document.getElementById('habitGrid');
+    const countEl = document.getElementById('count');
+    const percentEl = document.getElementById('percent');
+    const notesBox = document.getElementById('notesBox');
+    const noteArea = document.getElementById('dailyNote');
+    const noteLabel = document.getElementById('noteLabel');
+
+    let activeDay = null;
+    let data = JSON.parse(localStorage.getItem(storageKey)) || getInitialData();
+
+    function getInitialData() {
+        return {
+            progress: new Array(totalDays).fill(false),
+            notes: new Array(totalDays).fill('')
+        };
+    }
+
+    function updateUI() {
+        grid.innerHTML = '';
+        let completedCount = 0;
+
+        data.progress.forEach((isDone, index) => {
+            if (isDone) completedCount++;
+            
+            const btn = document.createElement('button');
+            btn.className = `day-btn ${isDone ? 'completed' : ''} ${activeDay === index ? 'active' : ''}`;
+            btn.innerHTML = isDone ? '<i data-lucide="check-circle-2"></i>' : `<span>${index + 1}</span>`;
+            
+            btn.addEventListener('click', () => selectDay(index));
+            btn.addEventListener('dblclick', () => toggleDay(index));
+            
+            grid.appendChild(btn);
+        });
+
+        countEl.innerText = completedCount;
+        percentEl.innerText = Math.round((completedCount / totalDays) * 100) + '%';
+        
+        lucide.createIcons();
+
+        if (completedCount === totalDays && completedCount > 0) {
+            triggerFinalCelebration();
+        }
+    }
+
+    function selectDay(index) {
+        activeDay = index;
+        notesBox.classList.add('visible');
+        noteLabel.innerText = `Day ${index + 1} Reflection`;
+        noteArea.value = data.notes[index];
+        updateUI();
+    }
+
+    function toggleDay(index) {
+        const wasDone = data.progress[index];
+        data.progress[index] = !wasDone;
+        
+        if (!wasDone) {
+            const btn = grid.children[index];
+            btn.classList.add('pop-anim');
+            setTimeout(() => btn.classList.remove('pop-anim'), 400);
+            
+            confetti({
+                particleCount: 40,
+                spread: 60,
+                origin: { y: 0.7 },
+                colors: ['#2563eb', '#10b981']
+            });
+        }
+
+        save();
+        updateUI();
+    }
+
+    function exportNotes() {
+        let content = "SPIRITUAL CONSISTENCY TRACKER - EXPORTED NOTES\n";
+        content += "==============================================\n\n";
+        
+        let hasNotes = false;
+        data.notes.forEach((note, i) => {
+            if (note.trim()) {
+                hasNotes = true;
+                const status = data.progress[i] ? "[COMPLETED]" : "[INCOMPLETE]";
+                content += `DAY ${i + 1} ${status}:\n${note}\n\n`;
+                content += "----------------------------------------------\n\n";
+            }
+        });
+
+        if (!hasNotes) {
+            alert("No notes found to export!");
+            return;
+        }
+
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Spiritual_Reflections_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function resetProgress() {
+        if (confirm("Are you sure? This will delete all progress and notes permanently.")) {
+            data = getInitialData();
+            activeDay = null;
+            notesBox.classList.remove('visible');
+            save();
+            updateUI();
+        }
+    }
+
+    noteArea.addEventListener('input', (e) => {
+        if (activeDay !== null) {
+            data.notes[activeDay] = e.target.value;
+            save();
+        }
+    });
+
+    function save() {
+        localStorage.setItem(storageKey, JSON.stringify(data));
+    }
+
+    function triggerFinalCelebration() {
+        // Confetti logic remains the same
+        const duration = 3 * 1000;
+        const end = Date.now() + duration;
+
+        (function frame() {
+            confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#2563eb', '#059669'] });
+            confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#2563eb', '#059669'] });
+            if (Date.now() < end) requestAnimationFrame(frame);
+        }());
+    }
+
+    updateUI();
+</script>
+
+</body>
+</html>
